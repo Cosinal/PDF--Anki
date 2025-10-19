@@ -24,6 +24,25 @@ logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
 
+# Read prompts from environment variables (required for deployment)
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT")
+USER_PROMPT_TEMPLATE = os.getenv("USER_PROMPT_TEMPLATE")
+
+# Validate that prompts are available
+if not SYSTEM_PROMPT:
+    raise RuntimeError(
+        "SYSTEM_PROMPT environment variable is required. "
+        "Please set it in your deployment platform (Render, etc.)."
+    )
+
+if not USER_PROMPT_TEMPLATE:
+    raise RuntimeError(
+        "USER_PROMPT_TEMPLATE environment variable is required. "
+        "Please set it in your deployment platform (Render, etc.)."
+    )
+
+logger.info("Prompts loaded successfully from environment variables")
+
 ANKI_IMPORT_INSTRUCTIONS = (
     "To import into Anki: 1. Open Anki 2. Click 'Import File' 3. Select this CSV "
     "4. Set Field separator to 'Comma' 5. Map Front → Question and Back → Answer 6. Click Import"
@@ -48,14 +67,6 @@ def _compute_allowed_origins() -> List[str]:
         )
 
     return origins
-
-PROMPT_IMPORT_ERROR: Optional[str] = None
-try:
-    from prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
-except Exception as exc:  # pragma: no cover - handled at runtime
-    SYSTEM_PROMPT = ""
-    USER_PROMPT_TEMPLATE = ""
-    PROMPT_IMPORT_ERROR = str(exc)
 
 app = FastAPI()
 
@@ -243,14 +254,6 @@ def _validate_pdf_upload(upload: UploadFile) -> str:
     return original_filename
 
 
-def _ensure_prompts_available() -> None:
-    if PROMPT_IMPORT_ERROR is not None:
-        raise RuntimeError(
-            "Missing prompts configuration. Copy prompts.py.example to prompts.py and adjust the values. "
-            f"Import error: {PROMPT_IMPORT_ERROR}"
-        )
-
-
 def _build_openai_client() -> OpenAI:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -263,8 +266,6 @@ def _build_openai_client() -> OpenAI:
 
 
 async def _extract_definitions_from_upload(upload: UploadFile) -> List[Dict[str, str]]:
-    _ensure_prompts_available()
-
     try:
         client = _build_openai_client()
     except RuntimeError as exc:

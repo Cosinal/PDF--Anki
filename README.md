@@ -10,16 +10,17 @@ FastAPI service that accepts textbook PDFs, extracts term/definition pairs throu
    ```bash
    pip install -r requirements.txt
    ```
-4. Copy the prompt template and environment examples:
+4. Copy the environment example:
    ```bash
-   cp prompts.py.example prompts.py
    cp .env.example .env
    ```
-5. Edit `.env` and set `OPENAI_API_KEY`.
+5. Edit `.env` and set **all** required variables (see below).
 
 ## Environment Variables
 
 - `OPENAI_API_KEY` (required): Secret key used to access OpenAI's API.
+- `SYSTEM_PROMPT` (required): System prompt text for the definition extractor.
+- `USER_PROMPT_TEMPLATE` (required): User prompt template; must contain `{page_text}` placeholder.
 - `ALLOWED_ORIGINS` (optional): Comma-separated list of CORS origins for production deployments.
 
 ## Running Locally
@@ -37,7 +38,7 @@ Upload a PDF to `POST /api/process-pdf` for JSON + CSV text, or `POST /api/downl
 3. Connect the GitHub repository.
 4. Build command: `pip install -r requirements.txt`
 5. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-6. Add the `OPENAI_API_KEY` environment variable (and `ALLOWED_ORIGINS` if needed).
+6. Add the `OPENAI_API_KEY`, `SYSTEM_PROMPT`, and `USER_PROMPT_TEMPLATE` environment variables (plus `ALLOWED_ORIGINS` if needed).
 7. Deploy.
 
 Render will provide the `PORT` environment variable automatically; the application reads it at runtime.
